@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="benchmarks/TextFilter.Benchmarks/TextFilter.Benchmarks.csproj" />
+  <Project Path="src/TextFilter.Console/TextFilter.Console.csproj" />
+  <Project Path="src/TextFilter.Core/TextFilter.Core.csproj" />
+  <Project Path="tests/TextFilter.Tests/TextFilter.Tests.csproj" />
+</Solution>

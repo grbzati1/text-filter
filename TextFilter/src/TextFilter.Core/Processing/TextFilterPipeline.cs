@@ -7,49 +7,36 @@ namespace TextFilter.Core.Processing;
 /// </summary>
 public sealed class TextFilterPipeline
 {
-    private readonly IReadOnlyCollection<IWordFilter> _filters;
-    private readonly IWordTokenizer _tokenizer;
+    private readonly IEnumerable<IWordFilter> _filters;
 
-    public TextFilterPipeline(IEnumerable<IWordFilter> filters, IWordTokenizer tokenizer)
+    public TextFilterPipeline(IEnumerable<IWordFilter> filters)
     {
-        ArgumentNullException.ThrowIfNull(filters);
-        ArgumentNullException.ThrowIfNull(tokenizer);
-
-        _filters = filters.ToArray();
-        _tokenizer = tokenizer;
-
-        if (_filters.Count == 0)
-        {
-            throw new ArgumentException("At least one filter must be provided.", nameof(filters));
-        }
+        _filters = filters;
     }
 
-    public string Apply(string text)
+    public IReadOnlyList<string> Apply(IEnumerable<string> words)
     {
-        ArgumentNullException.ThrowIfNull(text);
+        var result = new List<string>();
 
-        var tokenizedWords = _tokenizer.Tokenize(text);
-        var remainingWords = new List<string>();
-
-        foreach (var word in tokenizedWords)
+        foreach (var word in words)
         {
-            var shouldFilter = false;
+            var shouldKeep = true;
 
             foreach (var filter in _filters)
             {
                 if (filter.ShouldFilter(word))
                 {
-                    shouldFilter = true;
+                    shouldKeep = false;
                     break;
                 }
             }
 
-            if (!shouldFilter)
+            if (shouldKeep)
             {
-                remainingWords.Add(word);
+                result.Add(word);
             }
         }
 
-        return string.Join(' ', remainingWords);
+        return result;
     }
 }

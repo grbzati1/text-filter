@@ -21,10 +21,12 @@ public sealed class TextFilterPipelineTests
             new ContainsPatternFilter("t", new NaiveTextSearchAlgorithm())
         };
 
-        var sut = new TextFilterPipeline(filters, new WordTokenizer());
+        var tokenizer = new WordTokenizer();
+        var sut = new TextFilterPipeline(filters);
 
-        var result = sut.Apply("This code gym sky atlas");
+        var words = tokenizer.Tokenize("This code gym sky atlas");
+        var result = sut.Apply(words);
 
-        Assert.Equal("gym sky", result);
+        Assert.Equal(new[] { "gym", "sky" }, result);
     }
 }

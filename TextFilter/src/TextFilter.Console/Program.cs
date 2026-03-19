@@ -3,6 +3,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
+using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using TextFilter.Core.Abstractions;
 using TextFilter.Core.Configuration;
@@ -23,6 +25,11 @@ internal class Program
 
         builder.Services.Configure<TextFilterOptions>(builder.Configuration.GetSection("TextFilter"));
         builder.Services.Configure<SearchOptions>(builder.Configuration.GetSection("Search"));
+        builder.Services.Configure<ProcessingOptions>(builder.Configuration.GetSection("Processing"));
+
+        builder.Services.AddSingleton<InMemoryTextProcessingStrategy>();
+        builder.Services.AddSingleton<StreamingTextProcessingStrategy>();
+        builder.Services.AddSingleton<TextProcessingStrategyFactory>();
 
         builder.Services.AddSingleton<ITextFileReader, TextFileReader>();
         builder.Services.AddSingleton<IWordTokenizer, WordTokenizer>();
@@ -62,14 +69,21 @@ internal class Program
             return 1;
         }
 
-        var reader = host.Services.GetRequiredService<ITextFileReader>();
-        var pipeline = host.Services.GetRequiredService<TextFilterPipeline>();
+       
+        var strategyFactory = host.Services.GetRequiredService<TextProcessingStrategyFactory>();
+        var strategy = strategyFactory.Create(inputPath);
 
-        var inputText = await reader.ReadAllTextAsync(inputPath).ConfigureAwait(false);
-        var outputText = pipeline.Apply(inputText);
 
-        System.Console.WriteLine("Filtered text:");
-        System.Console.WriteLine(outputText);
+        var results = new List<string>();
+        CancellationToken cancellationToken = default;
+
+        await foreach (var word in strategy.ProcessTextAsync(inputPath, cancellationToken))
+        {
+            results.Add(word);
+        }
+
+        System.Console.WriteLine($"Filtered text: " + string.Join(' ', results));
+
 
         return 0;
     }
